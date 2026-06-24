@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  MOCK RELPER XML FEED — mirrors real Aureus RELPER export structure.
+  Use RELPER_FEED_URL=mock:// for local testing.
+-->
+<listings>
+  <listing>
+    <property_id>2843</property_id>
+    <purpose_id>2</purpose_id>
+    <property_name>Stan na prodaju, Telep</property_name>
+    <property_street>Bulevar Oslobođenja</property_street>
+    <property_street_number>22</property_street_number>
+    <property_flat_number/>
+    <property_floor>1</property_floor>
+    <property_floors>5</property_floors>
+    <property_country>Srbija</property_country>
+    <property_city>Novi Sad</property_city>
+    <property_hood>Telep</property_hood>
+    <property_hood_part/>
+    <property_description><![CDATA[Lep stan na prvom spratu u Telepu. Novija gradnja, useljen 2020. Centralno grejanje, lift, parking.]]></property_description>
+    <property_surface>65</property_surface>
+    <property_price>184000</property_price>
+    <property_type>Stan</property_type>
+    <structure>2.5</structure>
+    <deleted>0</deleted>
+    <other>
+      <other_element>Lift</other_element>
+      <other_element>Parking</other_element>
+    </other>
+    <images>
+      <image><![CDATA[https://picsum.photos/seed/2843a/800/600]]></image>
+      <image><![CDATA[https://picsum.photos/seed/2843b/800/600]]></image>
+    </images>
+    <location_lat/>
+    <location_lng/>
+  </listing>
+
+  <listing>
+    <property_id>4136</property_id>
+    <purpose_id>2</purpose_id>
+    <property_name>Dvoiposoban stan, Telep — visoko prizemlje</property_name>
+    <property_street>Futoška</property_street>
+    <property_street_number>112</property_street_number>
+    <property_flat_number/>
+    <property_floor>vp</property_floor>
+    <property_floors/>
+    <property_country>Srbija</property_country>
+    <property_city>Novi Sad</property_city>
+    <property_hood>Telep</property_hood>
+    <property_hood_part/>
+    <property_description><![CDATA[Stan u visokom prizemlju, renoviran 2023. Nova stolarija, parket, kupatilo.]]></property_description>
+    <property_surface>44</property_surface>
+    <property_price>128500</property_price>
+    <property_type>Stan</property_type>
+    <structure>2.5</structure>
+    <deleted>0</deleted>
+    <other>
+      <other_element>Ekskluzivno</other_element>
+      <other_element>Podrum</other_element>
+    </other>
+    <images>
+      <image><![CDATA[https://picsum.photos/seed/4136a/800/600]]></image>
+    </images>
+    <location_lat/>
+    <location_lng/>
+  </listing>
+
+  <listing>
+    <property_id>92</property_id>
+    <purpose_id>2</purpose_id>
+    <property_name>Ekskluzivan peterosoban stan, Liman 4</property_name>
+    <property_street>Bulevar Cara Lazara</property_street>
+    <property_street_number>90</property_street_number>
+    <property_flat_number/>
+    <property_floor>3</property_floor>
+    <property_floors>5</property_floors>
+    <property_country>Srbija</property_country>
+    <property_city>Novi Sad</property_city>
+    <property_hood>Liman 4</property_hood>
+    <property_hood_part/>
+    <property_description><![CDATA[Luksuzno uređen stan, dva mokra čvora, dnevni boravak sa izlazom na terasu. Pogled na Dunav.]]></property_description>
+    <property_surface>201</property_surface>
+    <property_price>999000</property_price>
+    <property_type>Stan</property_type>
+    <structure>5.0</structure>
+    <deleted>0</deleted>
+    <other>
+      <other_element>Ekskluzivno</other_element>
+      <other_element>Lift</other_element>
+      <other_element>Parking</other_element>
+      <other_element>Terasa</other_element>
+    </other>
+    <images>
+      <image><![CDATA[https://picsum.photos/seed/92a/800/600]]></image>
+      <image><![CDATA[https://picsum.photos/seed/92b/800/600]]></image>
+      <image><![CDATA[https://picsum.photos/seed/92c/800/600]]></image>
+    </images>
+    <location_lat/>
+    <location_lng/>
+  </listing>
+
+  <listing>
+    <property_id>4186</property_id>
+    <purpose_id>2</purpose_id>
+    <property_name>Garaža, Telep</property_name>
+    <property_street>Bulevar Oslobođenja</property_street>
+    <property_street_number>45</property_street_number>
+    <property_flat_number/>
+    <property_floor/>
+    <property_floors/>
+    <property_country>Srbija</property_country>
+    <property_city>Novi Sad</property_city>
+    <property_hood>Telep</property_hood>
+    <property_hood_part/>
+    <property_description><![CDATA[Garažno mesto u podzemnoj garaži stambene zgrade. Obezbeđeno. Video nadzor.]]></property_description>
+    <property_surface>12</property_surface>
+    <property_price>25000</property_price>
+    <property_type>Garaža</property_type>
+    <structure/>
+    <deleted>0</deleted>
+    <other/>
+    <images>
+      <image><![CDATA[https://picsum.photos/seed/4186a/800/600]]></image>
+    </images>
+    <location_lat/>
+    <location_lng/>
+  </listing>
+
+  <listing>
+    <property_id>4283</property_id>
+    <purpose_id>1</purpose_id>
+    <property_name>Jednoiposoban stan za izdavanje, Telep</property_name>
+    <property_street>Partizanska</property_street>
+    <property_street_number>7</property_street_number>
+    <property_flat_number/>
+    <property_floor>2</property_floor>
+    <property_floors>4</property_floors>
+    <property_country>Srbija</property_country>
+    <property_city>Novi Sad</property_city>
+    <property_hood>Telep</property_hood>
+    <property_hood_part/>
+    <property_description><![CDATA[Namešten stan za dugoročno iznajmljivanje. Centralno grejanje, internet uključen u cenu.]]></property_description>
+    <property_surface>45</property_surface>
+    <property_price>500</property_price>
+    <property_type>Stan</property_type>
+    <structure>1.5</structure>
+    <deleted>0</deleted>
+    <other/>
+    <images>
+      <image><![CDATA[https://picsum.photos/seed/4283a/800/600]]></image>
+    </images>
+    <location_lat/>
+    <location_lng/>
+  </listing>
+
+  <listing>
+    <property_id>3274</property_id>
+    <purpose_id>1</purpose_id>
+    <property_name>Poslovni prostor za iznajmljivanje, Salajka</property_name>
+    <property_street>Zmaj Jovina</property_street>
+    <property_street_number>3</property_street_number>
+    <property_flat_number/>
+    <property_floor>0</property_floor>
+    <property_floors/>
+    <property_country>Srbija</property_country>
+    <property_city>Novi Sad</property_city>
+    <property_hood>Salajka</property_hood>
+    <property_hood_part/>
+    <property_description><![CDATA[Veliki poslovni prostor u prizemlju stambene zgrade. Pogodan za restoran, prodavnicu ili kancelarije.]]></property_description>
+    <property_surface>276</property_surface>
+    <property_price>2250</property_price>
+    <property_type>Poslovni prostor</property_type>
+    <structure/>
+    <deleted>0</deleted>
+    <other>
+      <other_element>Parking</other_element>
+      <other_element>Podrum</other_element>
+    </other>
+    <images>
+      <image><![CDATA[https://picsum.photos/seed/3274a/800/600]]></image>
+      <image><![CDATA[https://picsum.photos/seed/3274b/800/600]]></image>
+    </images>
+    <location_lat/>
+    <location_lng/>
+  </listing>
+
+  <listing>
+    <property_id>4627</property_id>
+    <purpose_id>1</purpose_id>
+    <property_name>Dvosoban stan za izdavanje, Grbavica</property_name>
+    <property_street>Stevana Musića</property_street>
+    <property_street_number>14</property_street_number>
+    <property_flat_number/>
+    <property_floor>1</property_floor>
+    <property_floors>4</property_floors>
+    <property_country>Srbija</property_country>
+    <property_city>Novi Sad</property_city>
+    <property_hood>Grbavica</property_hood>
+    <property_hood_part/>
+    <property_description><![CDATA[Stan u odličnom stanju, nameštен, klima uređaj. Blizu fakulteta i tržnog centra.]]></property_description>
+    <property_surface>53</property_surface>
+    <property_price>150000</property_price>
+    <property_type>Stan</property_type>
+    <structure>2.0</structure>
+    <deleted>0</deleted>
+    <other/>
+    <images>
+      <image><![CDATA[https://picsum.photos/seed/4627a/800/600]]></image>
+    </images>
+    <location_lat/>
+    <location_lng/>
+  </listing>
+
+  <listing>
+    <property_id>526</property_id>
+    <purpose_id>2</purpose_id>
+    <property_name>Kuća na prodaju, Rumenka</property_name>
+    <property_street>Cara Lazara</property_street>
+    <property_street_number>5</property_street_number>
+    <property_flat_number/>
+    <property_floor>P+1</property_floor>
+    <property_floors/>
+    <property_country>Srbija</property_country>
+    <property_city>Novi Sad</property_city>
+    <property_hood>Rumenka</property_hood>
+    <property_hood_part/>
+    <property_description><![CDATA[Samostalna kuća P+1 sa garažom i vrtom. Plac 500m2. Gas, nova krovna konstrukcija 2022.]]></property_description>
+    <property_surface>150</property_surface>
+    <property_price>300000</property_price>
+    <property_type>Kuća</property_type>
+    <structure>5.0</structure>
+    <deleted>0</deleted>
+    <other>
+      <other_element>Parking</other_element>
+      <other_element>Terasa</other_element>
+      <other_element>Podrum</other_element>
+    </other>
+    <images>
+      <image><![CDATA[https://picsum.photos/seed/526a/800/600]]></image>
+      <image><![CDATA[https://picsum.photos/seed/526b/800/600]]></image>
+    </images>
+    <location_lat/>
+    <location_lng/>
+  </listing>
+</listings>
