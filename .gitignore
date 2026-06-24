@@ -1,0 +1,16 @@
+# Dependencies & secrets
+node_modules/
+.env
+
+# Generated at runtime
+geocode-cache.json
+
+# Not part of sync repo
+webflow/
+scripts/
+_brief_extract.txt
+.cursorrules
+.cursor/
+
+# Not used with GitHub Actions
+railway.json
