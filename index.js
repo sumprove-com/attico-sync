@@ -22,6 +22,7 @@ const run = async () => {
   let failed = false;
 
   try {
+    // ── Step 1: Fetch + parse RELPER XML ──────────────────────────
     const rawItems = await fetchFeed();
     const properties = parseProperties(rawItems);
 
@@ -30,16 +31,19 @@ const run = async () => {
       return;
     }
 
+    // ── Step 2: Fetch existing Webflow CMS items ───────────────────
     const cmsItems = await fetchCMSItems();
     const cmsMap = new Map(
       cmsItems.map((item) => [String(item.fieldData['estate-id']), item])
     );
     console.log(`[sync] CMS has ${cmsMap.size} existing items`);
 
+    // ── Step 3: Geocode (Scenario B — no coords in XML) ───────────
     await loadCache();
     await geocodeProperties(properties, cmsMap);
     await saveCache();
 
+    // ── Step 4: Create / Update ────────────────────────────────────
     for (const prop of properties) {
       try {
         const existing = cmsMap.get(prop.relper_id);
@@ -54,14 +58,18 @@ const run = async () => {
           stats.skipped++;
         }
 
+        // Mark as seen — what's left after this loop gets unpublished
         cmsMap.delete(prop.relper_id);
 
       } catch (err) {
         console.error(`[sync] Error processing ${prop.relper_id}: ${err.message}`);
         stats.errors++;
+        // Continue — don't let one bad item abort the whole run
       }
     }
 
+    // ── Step 5: Unpublish items no longer in feed ──────────────────
+    // cmsMap now only contains items that were NOT in the XML feed
     for (const [relper_id, item] of cmsMap) {
       try {
         if (await unpublishItem(item.id, relper_id)) stats.unpublished++;
@@ -73,6 +81,7 @@ const run = async () => {
     }
 
   } catch (err) {
+    // Top-level catch — XML fetch failed, Webflow API down, etc.
     console.error(`[sync] Fatal error: ${err.message}`);
     console.error(err.stack);
     failed = true;
