@@ -67,6 +67,7 @@ export const fetchCMSItems = async () => {
 const buildFieldData = (prop) => ({
   name: prop.naziv,
   'estate-id': Number(prop.relper_id),
+  'description-2': prop.opis_sr_plain,
   'description-rich': prop.opis_sr_html,
   'property-type-3': prop.tip,
   transakcija: prop.transakcija,
@@ -224,6 +225,7 @@ export const unpublishItem = async (itemId, relper_id) => {
 
 const CHANGE_CHECKS = [
   { prop: 'naziv', cms: 'name' },
+  { prop: 'opis_sr_plain', cms: 'description-2' },
   { prop: 'opis_sr_html', cms: 'description-rich' },
   { prop: 'tip', cms: 'property-type-3' },
   { prop: 'transakcija', cms: 'transakcija' },

@@ -66,6 +66,17 @@ const blocksToHtml = (blocks) =>
   blocks.map((block) => `<p>${escapeHtml(block)}</p>`).join('');
 
 /**
+ * Plain single-line text for embed spans and map popups (Webflow cannot bind Rich Text in embeds).
+ * @param {string | null | undefined} raw
+ * @returns {string | null}
+ */
+export const formatDescriptionPlain = (raw) => {
+  if (raw == null) return null;
+  const text = String(raw).replace(/\s+/g, ' ').trim();
+  return text || null;
+};
+
+/**
  * @param {string | null | undefined} raw
  * @returns {string | null}
  */
