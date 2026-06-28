@@ -64,12 +64,10 @@ export const fetchCMSItems = async () => {
   return all;
 };
 
-const toSingleLine = (text) => (text ? String(text).replace(/\r?\n+/g, ' ').trim() : null);
-
 const buildFieldData = (prop) => ({
   name: prop.naziv,
   'estate-id': Number(prop.relper_id),
-  'description-2': toSingleLine(prop.opis_sr),
+  'description-rich': prop.opis_sr_html,
   'property-type-3': prop.tip,
   transakcija: prop.transakcija,
   room: prop.broj_soba,
@@ -226,7 +224,7 @@ export const unpublishItem = async (itemId, relper_id) => {
 
 const CHANGE_CHECKS = [
   { prop: 'naziv', cms: 'name' },
-  { prop: 'opis_sr', cms: 'description-2' },
+  { prop: 'opis_sr_html', cms: 'description-rich' },
   { prop: 'tip', cms: 'property-type-3' },
   { prop: 'transakcija', cms: 'transakcija' },
   { prop: 'cena', cms: 'price' },

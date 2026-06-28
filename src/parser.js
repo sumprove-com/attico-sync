@@ -3,6 +3,8 @@
  * Maps raw RELPER XML fields → Webflow CMS field schema.
  */
 
+import { formatDescriptionHtml } from './descriptionFormat.js';
+
 const TIP_MAP = {
   'Stan': 'Stan',
   'Kuca': 'Kuca',
@@ -81,6 +83,7 @@ export const parseProperty = (raw) => {
 
   const floor = str(raw.property_floor);
   const floors = str(raw.property_floors);
+  const opis_sr = str(raw.property_description) || null;
 
   return {
     relper_id,
@@ -96,7 +99,8 @@ export const parseProperty = (raw) => {
     addressForGeocode,
     slike,
     prva_slika: slike[0] || null,
-    opis_sr: str(raw.property_description) || null,
+    opis_sr,
+    opis_sr_html: formatDescriptionHtml(opis_sr),
     heating: str(raw.heating?.heating_type) || null,
     beds: amenityText(furniture, 'Kreveti'),
     fridge: amenityText(furniture, 'Frižider'),
