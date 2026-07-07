@@ -221,11 +221,33 @@ const previewFieldData = (fieldData) => ({
   images: `[${fieldData.images.length} images]`,
 });
 
-const logDryRunFieldData = (action, prop, locale) => {
+const logDryRunFieldData = (action, prop, locale, locales) => {
   logLocaleFallback(prop, locale);
   const fieldData = buildFieldData(prop, locale);
   if (action === 'create' && locale === 'sr') {
     fieldData.slug = buildItemSlug(prop);
+    console.log(
+      `[webflow] DRY RUN — would bulk create (${locales.keys.join(', ')}) ` +
+      `cmsLocaleIds=[${locales.cmsLocaleIds.join(', ')}]: ${prop.relper_id} — ${prop.naziv}`
+    );
+    console.log(
+      JSON.stringify(
+        {
+          isArchived: false,
+          isDraft: false,
+          cmsLocaleIds: locales.cmsLocaleIds,
+          fieldData: previewFieldData(fieldData),
+        },
+        null,
+        2
+      )
+    );
+    return;
+  }
+  if (action === 'create') {
+    console.log(`[webflow] DRY RUN — would patch (${locale}): ${prop.relper_id} — ${prop.naziv}`);
+    console.log(JSON.stringify(previewFieldData(fieldData), null, 2));
+    return;
   }
   console.log(`[webflow] DRY RUN — would ${action} (${locale}): ${prop.relper_id} — ${prop.naziv}`);
   console.log(JSON.stringify(previewFieldData(fieldData), null, 2));
@@ -285,7 +307,7 @@ export const createItem = async (prop) => {
 
   if (process.env.DRY_RUN === 'true') {
     for (const locale of locales.keys) {
-      logDryRunFieldData('create', prop, locale);
+      logDryRunFieldData('create', prop, locale, locales);
     }
     return true;
   }
@@ -293,12 +315,14 @@ export const createItem = async (prop) => {
   const collectionId = process.env.WEBFLOW_COLLECTION_ID;
 
   const res = await throttledFetch(
-    `${BASE}/collections/${collectionId}/items`,
+    `${BASE}/collections/${collectionId}/items/bulk?skipInvalidFiles=true`,
     {
       method: 'POST',
       headers: headers(),
       body: JSON.stringify({
         cmsLocaleIds: locales.cmsLocaleIds,
+        isArchived: false,
+        isDraft: false,
         fieldData: {
           ...buildFieldData(prop, 'sr'),
           slug: buildItemSlug(prop),
@@ -309,14 +333,14 @@ export const createItem = async (prop) => {
 
   if (!res.ok) {
     const body = await res.text();
-    console.error(`[webflow] Create failed for ${prop.relper_id}: ${res.status} — ${body}`);
+    console.error(`[webflow] Bulk create failed for ${prop.relper_id}: ${res.status} — ${body}`);
     return false;
   }
 
   const data = await res.json();
   const itemId = data.id || data.items?.[0]?.id;
   if (!itemId) {
-    console.error(`[webflow] Create response missing item id for ${prop.relper_id}`);
+    console.error(`[webflow] Bulk create response missing item id for ${prop.relper_id}`);
     return false;
   }
 
@@ -347,7 +371,7 @@ export const updateItem = async (itemId, prop) => {
 
   if (process.env.DRY_RUN === 'true') {
     for (const locale of locales.keys) {
-      logDryRunFieldData('update', prop, locale);
+      logDryRunFieldData('update', prop, locale, locales);
     }
     return true;
   }
@@ -422,7 +446,7 @@ const CHANGE_CHECKS = [
   { prop: 'parking', cms: 'parking' },
   { prop: 'elevator', cms: 'elevator' },
   { prop: 'terrace', cms: 'terrace' },
-];
+};
 
 export const hasChanges = (prop, existingFieldData) => {
   const incomingFirst = prop.prva_slika || null;
