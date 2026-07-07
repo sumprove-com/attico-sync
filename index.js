@@ -1,9 +1,10 @@
 import dotenv from 'dotenv';
-dotenv.config({ override: true });
+dotenv.config();
 import { fetchFeed } from './src/relper.js';
 import { parseProperties } from './src/parser.js';
 import { loadCache, saveCache, geocodeProperties } from './src/geocoder.js';
 import {
+  fetchSiteLocales,
   fetchCMSItems,
   createItem,
   updateItem,
@@ -30,6 +31,9 @@ const run = async () => {
       console.warn('[sync] No valid properties parsed from feed — aborting to protect existing CMS data');
       return;
     }
+
+    // ── Step 1b: Resolve Webflow locale IDs (sr / en / ru) ───────
+    await fetchSiteLocales();
 
     // ── Step 2: Fetch existing Webflow CMS items ───────────────────
     const cmsItems = await fetchCMSItems();

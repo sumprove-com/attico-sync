@@ -7,7 +7,7 @@ geocode-cache.json
 
 # Not part of sync repo
 webflow/
-scripts/
+scripts/build-map-embeds.mjs
 _brief_extract.txt
 .cursorrules
 .cursor/

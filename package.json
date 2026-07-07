@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node index.js",
     "sync": "node index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "locales": "node scripts/fetch-locale-ids.mjs",
+    "test:dry-run": "node scripts/test-dry-run.mjs"
   },
   "keywords": [],
   "author": "",
