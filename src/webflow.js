@@ -1,6 +1,7 @@
 import fetch from 'node-fetch';
 import pLimit from 'p-limit';
 import { getLocaleText } from './parser.js';
+import { buildItemSlug } from './slug.js';
 
 const BASE = 'https://api.webflow.com/v2';
 
@@ -223,6 +224,9 @@ const previewFieldData = (fieldData) => ({
 const logDryRunFieldData = (action, prop, locale) => {
   logLocaleFallback(prop, locale);
   const fieldData = buildFieldData(prop, locale);
+  if (action === 'create' && locale === 'sr') {
+    fieldData.slug = buildItemSlug(prop);
+  }
   console.log(`[webflow] DRY RUN — would ${action} (${locale}): ${prop.relper_id} — ${prop.naziv}`);
   console.log(JSON.stringify(previewFieldData(fieldData), null, 2));
 };
@@ -295,7 +299,10 @@ export const createItem = async (prop) => {
       headers: headers(),
       body: JSON.stringify({
         cmsLocaleIds: locales.cmsLocaleIds,
-        fieldData: buildFieldData(prop, 'sr'),
+        fieldData: {
+          ...buildFieldData(prop, 'sr'),
+          slug: buildItemSlug(prop),
+        },
       }),
     }
   );
