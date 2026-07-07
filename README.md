@@ -25,7 +25,7 @@ Fill in `.env`:
 | `RELPER_FEED_URL` | RELPER XML feed URL (set to `mock://` for local testing) |
 | `WEBFLOW_API_TOKEN` | Webflow API token (Site Settings → Integrations → API Access) |
 | `WEBFLOW_COLLECTION_ID` | Nekretnine collection ID (from Webflow CMS URL or API) |
-| `WEBFLOW_SITE_ID` | Site ID (from Webflow Site Settings) |
+| `WEBFLOW_SITE_ID` | Site ID (required — used to resolve sr/en/ru locale IDs) |
 | `MAPBOX_TOKEN` | Mapbox access token (for geocoding) |
 | `DRY_RUN` | Set to `true` to log what would happen without writing to Webflow |
 
@@ -57,6 +57,21 @@ npm start
 On Windows PowerShell, set env vars separately or use a `.env` file with `dotenv`.
 
 **Always do a dry run first** when connecting to the real RELPER feed for the first time. Check the logs, confirm the field mappings look right, then run without DRY_RUN.
+
+---
+
+## Multi-locale sync (sr / en / ru)
+
+The sync writes to all three Webflow CMS locales on every create, update, publish, and unpublish operation by passing `cmsLocaleId` / `cmsLocaleIds` to the Webflow API.
+
+**Requirements:**
+
+- `WEBFLOW_SITE_ID` must be set — locale IDs are fetched from `GET /v2/sites/{siteId}` at the start of each run (requires `sites:read` scope on your API token)
+- Alternatively, set `WEBFLOW_CMS_LOCALE_SR`, `WEBFLOW_CMS_LOCALE_EN`, and `WEBFLOW_CMS_LOCALE_RU` in `.env` (run `node scripts/fetch-locale-ids.mjs` once with a token that has `sites:read` to print these values)
+- Webflow Localization must be enabled with Serbian (primary), English, and Russian
+- For items that existed **before** localization was added, EN/RU variants must be added manually in the Webflow CMS panel (the API cannot add locales to existing items)
+
+**RELPER translations:** The parser looks for optional `property_name_en`, `property_description_en`, `property_name_ru`, and `property_description_ru` XML fields. Until RELPER exposes these, EN/RU locales receive Serbian content as a fallback (logged as a warning).
 
 ---
 
@@ -140,6 +155,9 @@ GitHub repo → **Settings** → **Secrets and variables** → **Actions** → *
 | `WEBFLOW_SITE_ID` | Site ID |
 | `MAPBOX_TOKEN` | Mapbox token |
 | `DRY_RUN` | `true` for first test, then `false` |
+| `WEBFLOW_CMS_LOCALE_SR` | Optional — sr `cmsLocaleId` if token lacks `sites:read` |
+| `WEBFLOW_CMS_LOCALE_EN` | Optional — en `cmsLocaleId` if token lacks `sites:read` |
+| `WEBFLOW_CMS_LOCALE_RU` | Optional — ru `cmsLocaleId` if token lacks `sites:read` |
 
 ### 4. Run and verify
 
