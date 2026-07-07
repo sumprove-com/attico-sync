@@ -1,5 +1,6 @@
 import fetch from 'node-fetch';
 import pLimit from 'p-limit';
+import { getLocaleText } from './parser.js';
 
 const BASE = 'https://api.webflow.com/v2';
 
@@ -7,6 +8,7 @@ const limit = pLimit(1);
 const REQUEST_DELAY_MS = 1100;
 
 let lastRequestTime = 0;
+let siteLocales = null;
 
 const throttledFetch = async (url, options) => {
   return limit(async () => {
@@ -36,6 +38,106 @@ const headers = () => ({
   'accept-version': '2.0.0',
 });
 
+const resolveLocaleKey = (locale) => {
+  const sub = (locale.subdirectory || '').toLowerCase();
+  if (sub === 'en') return 'en';
+  if (sub === 'ru') return 'ru';
+
+  const tag = (locale.tag || '').toLowerCase();
+  if (tag.startsWith('en')) return 'en';
+  if (tag.startsWith('ru')) return 'ru';
+  return 'sr';
+};
+
+const getLocales = () => {
+  if (!siteLocales) {
+    throw new Error('[webflow] Site locales not initialized — call fetchSiteLocales() first');
+  }
+  return siteLocales;
+};
+
+const buildLocaleConfig = (byKey) => {
+  const keys = ['sr', 'en', 'ru'].filter((key) => byKey[key]?.cmsLocaleId);
+  return {
+    byKey,
+    keys,
+    cmsLocaleIds: keys.map((key) => byKey[key].cmsLocaleId),
+  };
+};
+
+const loadLocalesFromEnv = () => {
+  const sr = process.env.WEBFLOW_CMS_LOCALE_SR;
+  const en = process.env.WEBFLOW_CMS_LOCALE_EN;
+  const ru = process.env.WEBFLOW_CMS_LOCALE_RU;
+  if (!sr || !en || !ru) return null;
+
+  return buildLocaleConfig({
+    sr: { cmsLocaleId: sr, tag: 'sr' },
+    en: { cmsLocaleId: en, tag: 'en' },
+    ru: { cmsLocaleId: ru, tag: 'ru' },
+  });
+};
+
+export const fetchSiteLocales = async () => {
+  const fromEnv = loadLocalesFromEnv();
+  if (fromEnv) {
+    siteLocales = fromEnv;
+    console.log(
+      `[webflow] Locales (env): ${fromEnv.keys.map((key) => `${key}=${fromEnv.byKey[key].cmsLocaleId}`).join(', ')}`
+    );
+    return fromEnv;
+  }
+
+  const siteId = process.env.WEBFLOW_SITE_ID;
+  if (!siteId) {
+    throw new Error(
+      '[webflow] WEBFLOW_SITE_ID is required (or set WEBFLOW_CMS_LOCALE_SR/EN/RU env vars)'
+    );
+  }
+
+  const res = await throttledFetch(`${BASE}/sites/${siteId}`, { headers: headers() });
+
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(
+      `[webflow] fetchSiteLocales failed: ${res.status} — ${body}. ` +
+      'Add sites:read scope to your Webflow API token, or set WEBFLOW_CMS_LOCALE_SR, WEBFLOW_CMS_LOCALE_EN, and WEBFLOW_CMS_LOCALE_RU in .env'
+    );
+  }
+
+  const data = await res.json();
+  const byKey = {};
+
+  const primary = data.locales?.primary;
+  if (!primary?.cmsLocaleId) {
+    throw new Error('[webflow] Site has no primary locale — enable localization in Webflow first');
+  }
+
+  byKey.sr = { cmsLocaleId: primary.cmsLocaleId, tag: primary.tag };
+
+  for (const locale of data.locales?.secondary || []) {
+    if (!locale.enabled || !locale.cmsLocaleId) continue;
+    const key = resolveLocaleKey(locale);
+    if (key !== 'sr') {
+      byKey[key] = { cmsLocaleId: locale.cmsLocaleId, tag: locale.tag };
+    }
+  }
+
+  const config = buildLocaleConfig(byKey);
+
+  if (config.keys.length < 3) {
+    console.warn(
+      `[webflow] Expected 3 locales (sr/en/ru), found ${config.keys.length}: ${config.keys.join(', ')}`
+    );
+  }
+
+  siteLocales = config;
+  console.log(
+    `[webflow] Locales: ${config.keys.map((key) => `${key}=${byKey[key].cmsLocaleId}`).join(', ')}`
+  );
+  return config;
+};
+
 export const fetchCMSItems = async () => {
   const collectionId = process.env.WEBFLOW_COLLECTION_ID;
   const all = [];
@@ -64,11 +166,8 @@ export const fetchCMSItems = async () => {
   return all;
 };
 
-const buildFieldData = (prop) => ({
-  name: prop.naziv,
+const buildSharedFieldData = (prop) => ({
   'estate-id': Number(prop.relper_id),
-  'description-plain': prop.opis_sr_plain,
-  'description-rich': prop.opis_sr_html,
   'property-type-3': prop.tip,
   transakcija: prop.transakcija,
   room: prop.broj_soba,
@@ -99,23 +198,44 @@ const buildFieldData = (prop) => ({
   lng: prop.lng,
 });
 
-const logDryRunFieldData = (action, prop) => {
-  const fieldData = buildFieldData(prop);
-  const preview = {
-    ...fieldData,
-    images: `[${fieldData.images.length} images]`,
+const buildFieldData = (prop, locale) => {
+  const text = getLocaleText(prop, locale);
+  return {
+    ...buildSharedFieldData(prop),
+    name: text.naziv,
+    'description-plain': text.opis_plain,
+    'description-rich': text.opis_html,
   };
-  console.log(`[webflow] DRY RUN — would ${action}: ${prop.relper_id} — ${prop.naziv}`);
-  console.log(JSON.stringify(preview, null, 2));
 };
 
-const publishItems = async (collectionId, itemIds) => {
+const logLocaleFallback = (prop, locale) => {
+  if (locale === 'sr' || !prop.locale_fallback?.[locale]) return;
+  console.warn(
+    `[webflow] ${prop.relper_id} (${locale}): no RELPER translation — using Serbian content`
+  );
+};
+
+const previewFieldData = (fieldData) => ({
+  ...fieldData,
+  images: `[${fieldData.images.length} images]`,
+});
+
+const logDryRunFieldData = (action, prop, locale) => {
+  logLocaleFallback(prop, locale);
+  const fieldData = buildFieldData(prop, locale);
+  console.log(`[webflow] DRY RUN — would ${action} (${locale}): ${prop.relper_id} — ${prop.naziv}`);
+  console.log(JSON.stringify(previewFieldData(fieldData), null, 2));
+};
+
+const publishItems = async (collectionId, itemId, locales) => {
   const res = await throttledFetch(
     `${BASE}/collections/${collectionId}/items/publish`,
     {
       method: 'POST',
       headers: headers(),
-      body: JSON.stringify({ itemIds }),
+      body: JSON.stringify({
+        items: [{ id: itemId, cmsLocaleIds: locales.cmsLocaleIds }],
+      }),
     }
   );
 
@@ -128,9 +248,41 @@ const publishItems = async (collectionId, itemIds) => {
   return true;
 };
 
+const patchItemLocales = async (collectionId, itemId, prop, locales, localeKeys) => {
+  const items = localeKeys.map((locale) => {
+    logLocaleFallback(prop, locale);
+    return {
+      id: itemId,
+      cmsLocaleId: locales.byKey[locale].cmsLocaleId,
+      fieldData: buildFieldData(prop, locale),
+    };
+  });
+
+  const res = await throttledFetch(
+    `${BASE}/collections/${collectionId}/items`,
+    {
+      method: 'PATCH',
+      headers: headers(),
+      body: JSON.stringify({ items }),
+    }
+  );
+
+  if (!res.ok) {
+    const body = await res.text();
+    console.error(`[webflow] Locale patch failed for ${prop.relper_id}: ${res.status} — ${body}`);
+    return false;
+  }
+
+  return true;
+};
+
 export const createItem = async (prop) => {
+  const locales = getLocales();
+
   if (process.env.DRY_RUN === 'true') {
-    logDryRunFieldData('create', prop);
+    for (const locale of locales.keys) {
+      logDryRunFieldData('create', prop, locale);
+    }
     return true;
   }
 
@@ -141,7 +293,10 @@ export const createItem = async (prop) => {
     {
       method: 'POST',
       headers: headers(),
-      body: JSON.stringify({ fieldData: buildFieldData(prop) }),
+      body: JSON.stringify({
+        cmsLocaleIds: locales.cmsLocaleIds,
+        fieldData: buildFieldData(prop, 'sr'),
+      }),
     }
   );
 
@@ -151,45 +306,55 @@ export const createItem = async (prop) => {
     return false;
   }
 
-  const item = await res.json();
-  const published = await publishItems(collectionId, [item.id]);
+  const data = await res.json();
+  const itemId = data.id || data.items?.[0]?.id;
+  if (!itemId) {
+    console.error(`[webflow] Create response missing item id for ${prop.relper_id}`);
+    return false;
+  }
+
+  const secondaryLocales = locales.keys.filter((key) => key !== 'sr');
+  if (secondaryLocales.length > 0) {
+    const patched = await patchItemLocales(collectionId, itemId, prop, locales, secondaryLocales);
+    if (!patched) {
+      console.warn(`[webflow] Created ${itemId} but secondary locale patch failed for ${prop.relper_id}`);
+      return false;
+    }
+  }
+
+  const published = await publishItems(collectionId, itemId, locales);
 
   if (published) {
-    console.log(`[webflow] Created: ${prop.relper_id} — ${prop.naziv} (${item.id})`);
+    console.log(
+      `[webflow] Created (${locales.keys.join(', ')}): ${prop.relper_id} — ${prop.naziv} (${itemId})`
+    );
     return true;
   }
 
-  console.warn(`[webflow] Created draft but publish failed for ${prop.relper_id} (${item.id})`);
+  console.warn(`[webflow] Created draft but publish failed for ${prop.relper_id} (${itemId})`);
   return false;
 };
 
 export const updateItem = async (itemId, prop) => {
+  const locales = getLocales();
+
   if (process.env.DRY_RUN === 'true') {
-    logDryRunFieldData('update', prop);
+    for (const locale of locales.keys) {
+      logDryRunFieldData('update', prop, locale);
+    }
     return true;
   }
 
   const collectionId = process.env.WEBFLOW_COLLECTION_ID;
+  const patched = await patchItemLocales(collectionId, itemId, prop, locales, locales.keys);
+  if (!patched) return false;
 
-  const res = await throttledFetch(
-    `${BASE}/collections/${collectionId}/items/${itemId}`,
-    {
-      method: 'PATCH',
-      headers: headers(),
-      body: JSON.stringify({ fieldData: buildFieldData(prop) }),
-    }
-  );
-
-  if (!res.ok) {
-    const body = await res.text();
-    console.error(`[webflow] Update failed for ${prop.relper_id}: ${res.status} — ${body}`);
-    return false;
-  }
-
-  const published = await publishItems(collectionId, [itemId]);
+  const published = await publishItems(collectionId, itemId, locales);
 
   if (published) {
-    console.log(`[webflow] Updated: ${prop.relper_id} — ${prop.naziv}`);
+    console.log(
+      `[webflow] Updated (${locales.keys.join(', ')}): ${prop.relper_id} — ${prop.naziv}`
+    );
     return true;
   }
 
@@ -198,18 +363,25 @@ export const updateItem = async (itemId, prop) => {
 };
 
 export const unpublishItem = async (itemId, relper_id) => {
+  const locales = getLocales();
+
   if (process.env.DRY_RUN === 'true') {
-    console.log(`[webflow] DRY RUN — would unpublish item ${itemId} (RELPER ID: ${relper_id})`);
+    console.log(
+      `[webflow] DRY RUN — would unpublish (${locales.keys.join(', ')}) item ${itemId} (RELPER ID: ${relper_id})`
+    );
     return true;
   }
 
   const collectionId = process.env.WEBFLOW_COLLECTION_ID;
 
   const res = await throttledFetch(
-    `${BASE}/collections/${collectionId}/items/${itemId}/live`,
+    `${BASE}/collections/${collectionId}/items/live`,
     {
       method: 'DELETE',
       headers: headers(),
+      body: JSON.stringify({
+        items: [{ id: itemId, cmsLocaleIds: locales.cmsLocaleIds }],
+      }),
     }
   );
 
@@ -219,7 +391,9 @@ export const unpublishItem = async (itemId, relper_id) => {
     return false;
   }
 
-  console.log(`[webflow] Unpublished item ${itemId} (RELPER ID: ${relper_id})`);
+  console.log(
+    `[webflow] Unpublished (${locales.keys.join(', ')}) item ${itemId} (RELPER ID: ${relper_id})`
+  );
   return true;
 };
 
