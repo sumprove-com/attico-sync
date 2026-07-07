@@ -38,3 +38,6 @@ jobs:
           WEBFLOW_SITE_ID: ${{ secrets.WEBFLOW_SITE_ID }}
           MAPBOX_TOKEN: ${{ secrets.MAPBOX_TOKEN }}
           DRY_RUN: ${{ secrets.DRY_RUN }}
+          WEBFLOW_CMS_LOCALE_SR: ${{ secrets.WEBFLOW_CMS_LOCALE_SR }}
+          WEBFLOW_CMS_LOCALE_EN: ${{ secrets.WEBFLOW_CMS_LOCALE_EN }}
+          WEBFLOW_CMS_LOCALE_RU: ${{ secrets.WEBFLOW_CMS_LOCALE_RU }}
