@@ -83,11 +83,25 @@ export const parseProperty = (raw) => {
 
   const floor = str(raw.property_floor);
   const floors = str(raw.property_floors);
+  const naziv = str(raw.property_name) || `${tip}, ${lokacija}`;
   const opis_sr = str(raw.property_description) || null;
+
+  // Optional RELPER translation fields — confirm exact names with RELPER devs
+  const naziv_en_raw = str(raw.property_name_en) || null;
+  const opis_en_raw = str(raw.property_description_en) || null;
+  const naziv_ru_raw = str(raw.property_name_ru) || null;
+  const opis_ru_raw = str(raw.property_description_ru) || null;
+
+  const naziv_en = naziv_en_raw || naziv;
+  const naziv_ru = naziv_ru_raw || naziv;
+  const opis_en = opis_en_raw || opis_sr;
+  const opis_ru = opis_ru_raw || opis_sr;
 
   return {
     relper_id,
-    naziv: str(raw.property_name) || `${tip}, ${lokacija}`,
+    naziv,
+    naziv_en,
+    naziv_ru,
     tip,
     transakcija,
     cena: num(raw.property_price),
@@ -102,6 +116,16 @@ export const parseProperty = (raw) => {
     opis_sr,
     opis_sr_plain: formatDescriptionPlain(opis_sr),
     opis_sr_html: formatDescriptionHtml(opis_sr),
+    opis_en,
+    opis_en_plain: formatDescriptionPlain(opis_en),
+    opis_en_html: formatDescriptionHtml(opis_en),
+    opis_ru,
+    opis_ru_plain: formatDescriptionPlain(opis_ru),
+    opis_ru_html: formatDescriptionHtml(opis_ru),
+    locale_fallback: {
+      en: !naziv_en_raw || !opis_en_raw,
+      ru: !naziv_ru_raw || !opis_ru_raw,
+    },
     heating: str(raw.heating?.heating_type) || null,
     beds: amenityText(furniture, 'Kreveti'),
     fridge: amenityText(furniture, 'Frižider'),
@@ -131,4 +155,19 @@ export const parseProperties = (rawItems) => {
   const results = rawItems.map(parseProperty).filter(Boolean);
   console.log(`[parser] Parsed ${results.length}/${rawItems.length} items successfully`);
   return results;
+};
+
+const LOCALE_TEXT = {
+  sr: { naziv: 'naziv', plain: 'opis_sr_plain', html: 'opis_sr_html' },
+  en: { naziv: 'naziv_en', plain: 'opis_en_plain', html: 'opis_en_html' },
+  ru: { naziv: 'naziv_ru', plain: 'opis_ru_plain', html: 'opis_ru_html' },
+};
+
+export const getLocaleText = (prop, locale) => {
+  const keys = LOCALE_TEXT[locale] || LOCALE_TEXT.sr;
+  return {
+    naziv: prop[keys.naziv],
+    opis_plain: prop[keys.plain],
+    opis_html: prop[keys.html],
+  };
 };
