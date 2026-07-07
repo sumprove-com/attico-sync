@@ -446,7 +446,7 @@ const CHANGE_CHECKS = [
   { prop: 'parking', cms: 'parking' },
   { prop: 'elevator', cms: 'elevator' },
   { prop: 'terrace', cms: 'terrace' },
-};
+  ];
 
 export const hasChanges = (prop, existingFieldData) => {
   const incomingFirst = prop.prva_slika || null;
