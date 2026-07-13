@@ -4,6 +4,12 @@ import { fetchFeed } from './src/relper.js';
 import { parseProperties } from './src/parser.js';
 import { loadCache, saveCache, geocodeProperties } from './src/geocoder.js';
 import {
+  loadCache as loadTranslateCache,
+  saveCache as saveTranslateCache,
+  translateProperties,
+  markTranslationPushed,
+} from './src/translator.js';
+import {
   fetchSiteLocales,
   fetchCMSItems,
   createItem,
@@ -47,17 +53,30 @@ const run = async () => {
     await geocodeProperties(properties, cmsMap);
     await saveCache();
 
+    // ── Step 3b: Translate name + description (sr → en / ru) ────
+    await loadTranslateCache();
+    await translateProperties(properties);
+    await saveTranslateCache();
+
     // ── Step 4: Create / Update ────────────────────────────────────
     for (const prop of properties) {
       try {
         const existing = cmsMap.get(prop.relper_id);
 
         if (!existing) {
-          if (await createItem(prop)) stats.created++;
-          else stats.errors++;
-        } else if (hasChanges(prop, existing.fieldData)) {
-          if (await updateItem(existing.id, prop)) stats.updated++;
-          else stats.errors++;
+          if (await createItem(prop)) {
+            stats.created++;
+            if (process.env.DRY_RUN !== 'true') {
+              markTranslationPushed(prop.relper_id, prop.naziv, prop.opis_sr);
+            }
+          } else stats.errors++;
+        } else if (hasChanges(prop, existing.fieldData) || prop.needsTranslationPush) {
+          if (await updateItem(existing.id, prop)) {
+            stats.updated++;
+            if (process.env.DRY_RUN !== 'true') {
+              markTranslationPushed(prop.relper_id, prop.naziv, prop.opis_sr);
+            }
+          } else stats.errors++;
         } else {
           stats.skipped++;
         }
