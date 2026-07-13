@@ -8,10 +8,15 @@ const CACHE_FILE = './translate-cache.json';
 const API_ENDPOINT = 'https://api.cognitive.microsofttranslator.com';
 const SOURCE_LANG = 'sr-Latn';
 const TARGET_LANGS = ['en', 'ru'];
-const REQUEST_DELAY_MS = 200;
+const CHARS_PER_MIN = Number(process.env.AZURE_TRANSLATOR_CHARS_PER_MIN ?? 30000);
+const WINDOW_MS = Number(process.env.AZURE_TRANSLATOR_WINDOW_MS ?? 60000);
+const MAX_RETRIES = 5;
+const CACHE_SAVE_EVERY = 10;
+const PROGRESS_EVERY = 25;
 
 let cache = {};
 let charsUsed = 0;
+const charLog = [];
 
 export const hashText = (text) =>
   crypto.createHash('sha256').update(text ?? '', 'utf8').digest('hex');
@@ -47,6 +52,33 @@ export const markTranslationPushed = (relper_id, naziv, opis) => {
 };
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+const pruneCharLog = (now) => {
+  while (charLog.length && charLog[0].t <= now - WINDOW_MS) charLog.shift();
+};
+
+const charsInWindow = () => charLog.reduce((s, e) => s + e.chars, 0);
+
+const acquireCharBudget = async (chars) => {
+  while (true) {
+    const now = Date.now();
+    pruneCharLog(now);
+    const used = charsInWindow();
+    if (used + chars <= CHARS_PER_MIN) {
+      charLog.push({ t: now, chars });
+      return;
+    }
+    const waitMs = charLog[0].t + WINDOW_MS - now + 50;
+    console.log(
+      `[translator] Throttling — waiting ${Math.ceil(waitMs / 1000)}s (${used}/${CHARS_PER_MIN} chars in window)`
+    );
+    await sleep(waitMs);
+  }
+};
+
+const rollbackCharBudget = () => {
+  charLog.pop();
+};
 
 const needsNazivEn = (prop) => prop.naziv_en === prop.naziv;
 const needsOpisEn = (prop) => prop.opis_en === prop.opis_sr && prop.opis_sr != null;
@@ -87,10 +119,13 @@ const parseAzureResponse = (data, fields) => {
   return result;
 };
 
-const callAzure = async (texts, fields) => {
+const callAzure = async (texts, fields, attempt = 0) => {
   const key = process.env.AZURE_TRANSLATOR_KEY;
   const region = process.env.AZURE_TRANSLATOR_REGION;
   if (!region) throw new Error('AZURE_TRANSLATOR_REGION is required');
+
+  const charCount = texts.reduce((sum, t) => sum + t.length, 0);
+  await acquireCharBudget(charCount);
 
   const toParams = TARGET_LANGS.map((l) => `to=${l}`).join('&');
   const url = `${API_ENDPOINT}/translate?api-version=3.0&from=${SOURCE_LANG}&${toParams}`;
@@ -106,12 +141,27 @@ const callAzure = async (texts, fields) => {
     timeout: 15000,
   });
 
+  if (res.status === 429) {
+    rollbackCharBudget();
+    if (attempt < MAX_RETRIES) {
+      const retryAfter = parseInt(res.headers.get('retry-after') || '60', 10);
+      console.warn(
+        `[translator] Rate limited (429) — waiting ${retryAfter}s (attempt ${attempt + 1}/${MAX_RETRIES})`
+      );
+      await sleep(retryAfter * 1000);
+      return callAzure(texts, fields, attempt + 1);
+    }
+    const body = await res.text();
+    throw new Error(`Azure Translator 429 — ${body}`);
+  }
+
   if (!res.ok) {
+    rollbackCharBudget();
     const body = await res.text();
     throw new Error(`Azure Translator ${res.status} — ${body}`);
   }
 
-  charsUsed += texts.reduce((sum, t) => sum + t.length, 0);
+  charsUsed += charCount;
   return parseAzureResponse(await res.json(), fields);
 };
 
@@ -200,8 +250,12 @@ export const translateProperties = async (properties) => {
   let cached = 0;
   let skipped = 0;
   let errors = 0;
+  let sinceLastSave = 0;
+  let processed = 0;
+  const total = properties.length;
 
   for (const prop of properties) {
+    processed++;
     prop.needsTranslationPush = false;
 
     try {
@@ -209,7 +263,11 @@ export const translateProperties = async (properties) => {
 
       if (result === 'translated') {
         translated++;
-        await sleep(REQUEST_DELAY_MS);
+        sinceLastSave++;
+        if (sinceLastSave >= CACHE_SAVE_EVERY) {
+          await saveCache();
+          sinceLastSave = 0;
+        }
       } else if (result === 'cached') {
         cached++;
       } else {
@@ -225,6 +283,13 @@ export const translateProperties = async (properties) => {
       errors++;
       console.warn(`[translator] Failed for ${prop.relper_id}: ${err.message} — keeping Serbian fallback`);
       applyLocaleFields(prop);
+    }
+
+    if (processed % PROGRESS_EVERY === 0) {
+      console.log(
+        `[translator] Progress: ${processed}/${total} (translated ${translated}, cached ${cached}, errors ${errors})` +
+        (charsUsed > 0 ? ` | ${charsUsed} chars sent` : '')
+      );
     }
   }
 
