@@ -212,7 +212,7 @@ const buildFieldData = (prop, locale) => {
 const logLocaleFallback = (prop, locale) => {
   if (locale === 'sr' || !prop.locale_fallback?.[locale]) return;
   console.warn(
-    `[webflow] ${prop.relper_id} (${locale}): no RELPER translation — using Serbian content`
+    `[webflow] ${prop.relper_id} (${locale}): no translation available — using Serbian content`
   );
 };
 
@@ -446,7 +446,7 @@ const CHANGE_CHECKS = [
   { prop: 'parking', cms: 'parking' },
   { prop: 'elevator', cms: 'elevator' },
   { prop: 'terrace', cms: 'terrace' },
-  ];
+};
 
 export const hasChanges = (prop, existingFieldData) => {
   const incomingFirst = prop.prva_slika || null;
