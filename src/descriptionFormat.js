@@ -98,3 +98,23 @@ export const formatDescriptionHtml = (raw) => {
   const html = blocksToHtml(blocks);
   return html || null;
 };
+
+/**
+ * Simple HTML for translated EN/RU descriptions (no Serbian section markers).
+ * @param {string | null | undefined} raw
+ * @returns {string | null}
+ */
+export const formatDescriptionHtmlTranslated = (raw) => {
+  if (raw == null) return null;
+
+  const text = String(raw).trim();
+  if (!text) return null;
+
+  if (/\r?\n/.test(text)) {
+    const html = newlinesToHtml(text);
+    return html || null;
+  }
+
+  const normalized = text.replace(/\s+/g, ' ');
+  return `<p>${escapeHtml(normalized)}</p>`;
+};
