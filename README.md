@@ -71,7 +71,17 @@ The sync writes to all three Webflow CMS locales on every create, update, publis
 - Webflow Localization must be enabled with Serbian (primary), English, and Russian
 - For items that existed **before** localization was added, EN/RU variants must be added manually in the Webflow CMS panel (the API cannot add locales to existing items)
 
-**RELPER translations:** The parser looks for optional `property_name_en`, `property_description_en`, `property_name_ru`, and `property_description_ru` XML fields. Until RELPER exposes these, EN/RU locales receive Serbian content as a fallback (logged as a warning).
+**RELPER translations:** The parser looks for optional `property_name_en`, `property_description_en`, `property_name_ru`, and `property_description_ru` XML fields. When those are missing, Azure AI Translator fills EN/RU `name` and `description` from Serbian source text. Translations are cached in `translate-cache.json` and only re-fetched when Serbian name or description changes.
+
+**Azure Translator env vars:**
+
+| Variable | Required | Description |
+|---|---|---|
+| `AZURE_TRANSLATOR_KEY` | Yes (for translation) | API key from Azure Portal → Keys and Endpoint |
+| `AZURE_TRANSLATOR_REGION` | Yes | Resource region, e.g. `northeurope` |
+| `TRANSLATE_ENABLED` | No | `true` (default when key set) or `false` to disable and use Serbian fallback |
+
+Test translation: `node scripts/test-translator.mjs`
 
 ---
 
@@ -179,6 +189,13 @@ Private repos include 2,000 GitHub Actions minutes/month on the free plan. This 
 
 - **Locally:** persists in the project root between runs (gitignored)
 - **GitHub Actions:** persisted between runs via Actions cache (not committed to git)
+
+## Translation cache
+
+`translate-cache.json` stores Azure-translated EN/RU name and description per property. Translations are only re-fetched when Serbian source text changes. `pushedHash` tracks whether translated content has been written to Webflow (enables auto-backfill on first run).
+
+- **Locally:** gitignored, persists between runs
+- **GitHub Actions:** persisted via Actions cache (same pattern as geocode cache)
 
 ---
 
