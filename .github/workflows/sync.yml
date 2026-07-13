@@ -29,6 +29,14 @@ jobs:
           restore-keys: |
             geocode-cache-
 
+      - name: Restore translate cache
+        uses: actions/cache@v4
+        with:
+          path: translate-cache.json
+          key: translate-cache-${{ hashFiles('src/translator.js') }}
+          restore-keys: |
+            translate-cache-
+
       - name: Run sync
         run: node index.js
         env:
@@ -37,6 +45,9 @@ jobs:
           WEBFLOW_COLLECTION_ID: ${{ secrets.WEBFLOW_COLLECTION_ID }}
           WEBFLOW_SITE_ID: ${{ secrets.WEBFLOW_SITE_ID }}
           MAPBOX_TOKEN: ${{ secrets.MAPBOX_TOKEN }}
+          AZURE_TRANSLATOR_KEY: ${{ secrets.AZURE_TRANSLATOR_KEY }}
+          AZURE_TRANSLATOR_REGION: ${{ secrets.AZURE_TRANSLATOR_REGION }}
+          TRANSLATE_ENABLED: ${{ secrets.TRANSLATE_ENABLED }}
           DRY_RUN: ${{ secrets.DRY_RUN }}
           WEBFLOW_CMS_LOCALE_SR: ${{ secrets.WEBFLOW_CMS_LOCALE_SR }}
           WEBFLOW_CMS_LOCALE_EN: ${{ secrets.WEBFLOW_CMS_LOCALE_EN }}
