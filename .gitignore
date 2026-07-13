@@ -4,6 +4,7 @@ node_modules/
 
 # Generated at runtime
 geocode-cache.json
+translate-cache.json
 
 # Not part of sync repo
 webflow/
