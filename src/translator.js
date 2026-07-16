@@ -5,7 +5,7 @@ import { existsSync } from 'fs';
 import { formatDescriptionPlain, formatDescriptionHtmlTranslated } from './descriptionFormat.js';
 
 const CACHE_FILE = './translate-cache.json';
-const API_ENDPOINT = 'https://api.cognitive.microsofttranslator.com';
+const DEFAULT_ENDPOINT = 'https://api.cognitive.microsofttranslator.com';
 const SOURCE_LANG = 'sr-Latn';
 const TARGET_LANGS = ['en', 'ru'];
 const CHARS_PER_MIN = Number(process.env.AZURE_TRANSLATOR_CHARS_PER_MIN ?? 30000);
@@ -119,6 +119,18 @@ const parseAzureResponse = (data, fields) => {
   return result;
 };
 
+const getApiBase = () =>
+  (process.env.AZURE_TRANSLATOR_ENDPOINT ?? DEFAULT_ENDPOINT).replace(/\/$/, '');
+
+const buildTranslateUrl = (fromLang, toParams) => {
+  const base = getApiBase();
+  const query = `api-version=3.0&from=${fromLang}&${toParams}`;
+  if (base.includes('.cognitiveservices.azure.com')) {
+    return `${base}/translator/text/v3.0/translate?${query}`;
+  }
+  return `${base}/translate?${query}`;
+};
+
 const callAzure = async (texts, fields, attempt = 0) => {
   const key = process.env.AZURE_TRANSLATOR_KEY;
   const region = process.env.AZURE_TRANSLATOR_REGION;
@@ -128,7 +140,7 @@ const callAzure = async (texts, fields, attempt = 0) => {
   await acquireCharBudget(charCount);
 
   const toParams = TARGET_LANGS.map((l) => `to=${l}`).join('&');
-  const url = `${API_ENDPOINT}/translate?api-version=3.0&from=${SOURCE_LANG}&${toParams}`;
+  const url = buildTranslateUrl(SOURCE_LANG, toParams);
 
   const res = await fetch(url, {
     method: 'POST',
