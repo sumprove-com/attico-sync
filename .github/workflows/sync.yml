@@ -47,6 +47,7 @@ jobs:
           MAPBOX_TOKEN: ${{ secrets.MAPBOX_TOKEN }}
           AZURE_TRANSLATOR_KEY: ${{ secrets.AZURE_TRANSLATOR_KEY }}
           AZURE_TRANSLATOR_REGION: ${{ secrets.AZURE_TRANSLATOR_REGION }}
+          AZURE_TRANSLATOR_ENDPOINT: ${{ secrets.AZURE_TRANSLATOR_ENDPOINT }}
           TRANSLATE_ENABLED: ${{ secrets.TRANSLATE_ENABLED }}
           DRY_RUN: ${{ secrets.DRY_RUN }}
           WEBFLOW_CMS_LOCALE_SR: ${{ secrets.WEBFLOW_CMS_LOCALE_SR }}
